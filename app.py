@@ -1,15 +1,15 @@
 from flask import Flask, request, jsonify
 from linkedin_api import Linkedin
 from linkedin_cookies import cookiejar
-
+from data_manipulation import extract_job_ids
 app = Flask(__name__)
 
 # Route to authenticate and search jobs
 @app.route('/search_jobs', methods=['GET'])
 def search_jobs():
     # Get query parameters
-    username = request.args.get('username')
-    password = request.args.get('password')
+    username = request.args.get('username',"abdeljalil.sayarh@gmail.com")
+    password = request.args.get('password',"54321Nisk@")
     keywords = request.args.get('keywords')
     location = request.args.get('location')
     experience = request.args.getlist('experience')  # List of experience levels
@@ -33,7 +33,8 @@ def search_jobs():
             industries=industries,
             limit=limit
         )
-        return jsonify(jobs)
+        jobs = jsonify(jobs)
+        extracted_jobs = extract_job_ids(jobs)
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
