@@ -33,8 +33,9 @@ def search_jobs():
             industries=industries,
             limit=limit
         )
-        jobs = jsonify(jobs)
+        #jobs = jobs.json()
         extracted_jobs = extract_job_ids(jobs)
+        return jsonify({"job_ids":extracted_jobs})
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
