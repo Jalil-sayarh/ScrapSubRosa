@@ -1,7 +1,7 @@
 from flask import Flask, request, jsonify
 from linkedin_api import Linkedin
 from linkedin_cookies import cookiejar
-from data_manipulation import extract_job_ids
+from data_manipulation import extract_job_ids, fetch_job_details
 app = Flask(__name__)
 
 # Route to authenticate and search jobs
@@ -34,8 +34,9 @@ def search_jobs():
             limit=limit
         )
         #jobs = jobs.json()
-        extracted_jobs = extract_job_ids(jobs)
-        return jsonify({"job_ids":extracted_jobs})
+        job_ids = extract_job_ids(jobs)
+        jobs_details=fetch_job_details(linkedin, job_ids, ["title", "name", "url", "text", "formattedLocation", "company_apply_url"])
+        return jsonify({"job_details":jobs_details})
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
