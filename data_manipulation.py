@@ -1,3 +1,4 @@
+import re
 
 def extract_job_ids(job_results):
     """
@@ -85,3 +86,40 @@ def fetch_job_details(linkedin, job_ids, keys_to_extract):
             job_details_list.append({"job_id": job_id, "error": str(e)})
 
     return job_details_list
+
+
+def filter_jobs_by_keywords(job_details_list, disqualifying_keywords = ["stage", "alternant", "intern", "trainee", "junior","internship"], fields_to_check=["title", "text"]):
+    """
+    Filters job details based on the presence of disqualifying keywords.
+
+    Args:
+        job_details_list (list): List of job details dictionaries.
+        disqualifying_keywords (list): List of keywords to filter out.
+        fields_to_check (list): List of fields to check for keywords (e.g., "title", "text").
+
+    Returns:
+        list: A filtered list of job details dictionaries.
+    """
+    filtered_jobs = []
+
+    # Compile regular expressions for the disqualifying keywords
+    keyword_patterns = [re.compile(rf'\b{re.escape(keyword)}\b', re.IGNORECASE) for keyword in disqualifying_keywords]
+
+    for job_details in job_details_list:
+        # Flag to determine if the job should be disqualified
+        disqualify = False
+
+        for field in fields_to_check:
+            # Check if the field exists and contains a value
+            field_value = job_details.get(field, "").lower()
+
+            # Check for disqualifying keywords as whole words in the field value
+            if any(pattern.search(field_value) for pattern in keyword_patterns):
+                disqualify = True
+                break  # No need to check further fields for this job
+
+        # Add the job to the filtered list if it's not disqualified
+        if not disqualify:
+            filtered_jobs.append(job_details)
+
+    return filtered_jobs
