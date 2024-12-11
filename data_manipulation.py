@@ -1,5 +1,60 @@
 import re
 
+def enrich_with_company_info(api, job_data):
+    """
+    Enriches job data with selected company information.
+
+    Args:
+        api (Linkedin): Authenticated Linkedin object.
+        job_data (list): List of dictionaries containing job details.
+
+    Returns:
+        list: The original job_data enriched with selected company info for each job.
+    """
+    # Ensure job_data is a list
+    if isinstance(job_data, dict):
+        job_data = [job_data]  # Wrap single dictionary in a list
+
+    for job in job_data:
+        try:
+            # Extract the company URN
+            company_urn = (
+                job.get("companyDetails", {})
+                .get("com.linkedin.voyager.deco.jobs.web.shared.WebCompactJobPostingCompany", {})
+                .get("companyResolutionResult", {})
+                .get("entityUrn", None)
+            )
+
+            # Extract the numeric company ID
+            company_id = None
+            if company_urn and "fs_normalized_company:" in company_urn:
+                company_id = int(company_urn.split(":")[-1])
+
+            # Fetch company details
+            if company_id:
+                company_details = api.get_company(company_id)
+
+                # Select specific fields from company details
+                selected_company_info = {
+                    "company_id": company_id,
+                    "company_name": company_details.get("name"),
+                    "industry": company_details.get("companyIndustries", [{}])[0].get("localizedName", "Unknown"),
+                    "staff_count": company_details.get("staffCount"),
+                    "headquarter_location": company_details.get("headquarter", {}).get("city", "Unknown"),
+                    "website": company_details.get("callToAction", {}).get("url"),
+                    "follower_count": company_details.get("followingInfo", {}).get("followerCount", 0),
+                }
+                job["company_info"] = selected_company_info
+            else:
+                print(f"No company ID found for job: {job.get('title')}")
+                job["company_info"] = None
+        except Exception as e:
+            print(f"Error extracting company info for job '{job.get('title', 'Unknown')}': {e}")
+            job["company_info"] = None
+
+    return job_data
+
+
 def extract_job_ids(job_results):
     """
     Extracts job IDs from a list of job postings.
@@ -41,7 +96,7 @@ def fetch_job_details(linkedin, job_ids, keys_to_extract):
         try:
             # Fetch job details using the LinkedIn API
             job_data = linkedin.get_job(job_id)
-
+            
             # Initialize a dictionary to store the extracted data
             extracted_data = {}
 
