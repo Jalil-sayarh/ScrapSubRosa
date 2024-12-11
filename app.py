@@ -35,7 +35,7 @@ def search_jobs():
         )
         #jobs = jobs.json()
         job_ids = extract_job_ids(jobs)
-        jobs_details=fetch_job_details(linkedin, job_ids, ["title", "name", "url", "text", "formattedLocation", "company_apply_url"])
+        jobs_details=fetch_job_details(linkedin, job_ids, ["title", "name", "url", "formattedLocation", "company_apply_url","text"])
         return jsonify({"job_details":jobs_details})
     except Exception as e:
         return jsonify({"error": str(e)}), 500
