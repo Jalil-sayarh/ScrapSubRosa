@@ -21,3 +21,4 @@ def extract_job_ids(job_results):
             job_ids.append(job_id)
 
     return job_ids
+
