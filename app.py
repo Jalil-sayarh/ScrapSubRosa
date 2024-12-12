@@ -1,6 +1,6 @@
 from flask import Flask, request, jsonify
 from linkedin_api import Linkedin
-from linkedin_cookies import cookiejar,cookies
+from linkedin_cookies import accounts_cookies
 from data_manipulation import extract_job_ids, fetch_job_details, filter_jobs_by_keywords
 app = Flask(__name__)
 
@@ -21,8 +21,12 @@ def search_jobs():
         return jsonify({"error": "Missing username or password"}), 400
 
     try:
+        try:
+            selected_cookies = accounts_cookies.get(username)
+        except KeyError:
+            return jsonify({"error": "No cookies found for this account, please change the account or contact developper to manually add cookies"}), 400
         # Authenticate with LinkedIn
-        linkedin = Linkedin(username, password, cookies=cookies)
+        linkedin = Linkedin(username, password, cookies=selected_cookies)
 
         # Search for jobs
         jobs = linkedin.search_jobs(
