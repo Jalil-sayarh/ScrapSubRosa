@@ -5,11 +5,23 @@ from data_manipulation import extract_job_ids, fetch_job_details, filter_jobs_by
 
 app = Flask(__name__)
 
-# Route to authenticate and search jobs
-@app.route('/search_jobs', methods=['GET'])
-def search_jobs():
+def get_authenticated_linkedin(username):
+    """Authenticate to LinkedIn using the provided username."""
+    if username not in accounts_cookies:
+        available_accounts = list(accounts_cookies.keys())
+        return None, jsonify({
+            "error": f"No cookies found for this account: {username}.",
+            "available_accounts": available_accounts
+        }), 400
+
+    selected_cookies = accounts_cookies[username]
+    linkedin = Linkedin(username, cookies=selected_cookies)
+    return linkedin, None
+
+# Endpoint to get job IDs based on search parameters
+@app.route('/get_job_ids', methods=['GET'])
+def get_job_ids():
     username = request.args.get('username', "abdeljalil.sayarh@gmail.com")
-    password = request.args.get('password', "54321Nisk@")
     keywords = request.args.get('keywords')
     location = request.args.get('location')
     experience = request.args.getlist('experience')
@@ -17,43 +29,47 @@ def search_jobs():
     industries = request.args.getlist('industries')
     limit = int(request.args.get('limit', 10))
 
+    linkedin, error_response = get_authenticated_linkedin(username)
+    if error_response:
+        return error_response
+
     try:
-            if username not in accounts_cookies:
-                available_accounts = list(accounts_cookies.keys())
-                return jsonify({
-                    "error": f"No cookies found for this account: {username}.",
-                    "available_accounts": available_accounts
-                }), 400
+        jobs = linkedin.search_jobs(
+            keywords=keywords,
+            location_name=location,
+            experience=experience,
+            job_type=job_type,
+            industries=industries,
+            limit=limit
+        )
+        if not jobs:
+            return jsonify({"error": "No jobs found for the given parameters.", "job_ids": []}), 404
 
-            selected_cookies = accounts_cookies[username]
-            linkedin = Linkedin(username, password, cookies=selected_cookies)
-
-            jobs = linkedin.search_jobs(
-                keywords=keywords,
-                location_name=location,
-                experience=experience,
-                job_type=job_type,
-                industries=industries,
-                limit=limit
-            )
-            print("Jobs search result:", jobs)
-
-            if not jobs:
-                return jsonify({"error": "No jobs found for the given parameters.", "jobs": []}), 404
-
-            job_ids = extract_job_ids(jobs)
-            print("Extracted job IDs:", job_ids)
-
-            jobs_details = fetch_job_details(linkedin, job_ids, ["title", "name", "url", "formattedLocation", "company_apply_url", "text"])
-            print("Fetched job details:", jobs_details)
-
-            relevant_jobs = filter_jobs_by_keywords(jobs_details)
-            print("Relevant jobs after filtering:", relevant_jobs)
-
-            return jsonify({"relevant_jobs": relevant_jobs, "jobs": jobs_details})
-
+        job_ids = extract_job_ids(jobs)
+        return jsonify({"job_ids": job_ids})
     except Exception as e:
-            return jsonify({"error": str(e)}), 500
+        return jsonify({"error": str(e)}), 500
+
+# Endpoint to fetch job details given a list of job IDs
+@app.route('/fetch_job_details', methods=['POST'])
+def fetch_job_details_endpoint():
+    data = request.json
+    username = data.get('username', "abdeljalil.sayarh@gmail.com")
+    job_ids = data.get('job_ids')
+    keys_to_extract = ["title", "name", "url", "formattedLocation", "company_apply_url", "text"]
+
+    if not job_ids or not isinstance(job_ids, list):
+        return jsonify({"error": "Invalid or missing 'job_ids'. It should be a list of job IDs."}), 400
+
+    linkedin, error_response = get_authenticated_linkedin(username)
+    if error_response:
+        return error_response
+
+    try:
+        jobs_details = fetch_job_details(linkedin, job_ids, keys_to_extract)
+        return jsonify({"jobs_details": jobs_details})
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
 
 if __name__ == '__main__':
     app.run(debug=True)
