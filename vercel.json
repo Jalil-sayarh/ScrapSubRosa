@@ -1,15 +1,17 @@
 {
   "version": 2,
-  "builds": [
-    { "src": "app.py", "use": "@vercel/python" }
-  ],
-  "routes": [
-    { "src": "/(.*)", "dest": "app.py" }
-  ],
   "functions": {
-    "app.py": {
+    "api/get_job_ids.py": {
       "runtime": "python3.11.9",
-      "maxDuration": 30
+      "maxDuration": 10
+    },
+    "api/fetch_job_details.py": {
+      "runtime": "python3.11.9",
+      "maxDuration": 10
     }
-  }
+  },
+  "routes": [
+    { "src": "/get_job_ids", "dest": "api/get_job_ids.py" },
+    { "src": "/fetch_job_details", "dest": "api/fetch_job_details.py" }
+  ]
 }
