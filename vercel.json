@@ -5,11 +5,5 @@
   ],
   "routes": [
     { "src": "/(.*)", "dest": "app.py" }
-  ],
-  "functions": {
-    "app.py": {
-      "runtime": "@vercel/python",
-      "maxDuration": 10
-    }
-  }
+  ]
 }
