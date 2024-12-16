@@ -52,22 +52,25 @@ def get_job_ids():
         return jsonify({"error": str(e)}), 500
 
 # Endpoint to fetch job details given a list of job IDs
-@app.route('/fetch_job_details', methods=['POST'])
+@app.route('/fetch_job_details', methods=['GET'])
 def fetch_job_details_endpoint():
-    data = request.json
-    username = data.get('username', "abdeljalil.sayarh@gmail.com")
-    password = data.get('password', "54321Nisk@")
-    job_ids = data.get('job_ids')
-    keys_to_extract = ["title", "name", "url", "formattedLocation", "company_apply_url", "text"]
+    username = request.args.get('username', "abdeljalil.sayarh@gmail.com")
+    password = request.args.get('password', "54321Nisk@")
+    job_id = request.args.get('job_id')
 
-    if not job_ids or not isinstance(job_ids, list):
-        return jsonify({"error": "Invalid or missing 'job_ids'. It should be a list of job IDs."}), 400
+    if not job_id:
+        return jsonify({"error": "Missing 'job_id' parameter."}), 400
 
     linkedin, error_response = get_authenticated_linkedin(username,password)
     if error_response:
         return error_response
 
     try:
+        # Convert job_id into a list of one element
+        job_id = str(job_id)
+        job_ids = [job_id]
+        keys_to_extract = ["title", "name", "url", "formattedLocation", "company_apply_url", "text"]
+
         jobs_details = fetch_job_details(linkedin, job_ids, keys_to_extract)
         return jsonify({"jobs_details": jobs_details})
     except Exception as e:
