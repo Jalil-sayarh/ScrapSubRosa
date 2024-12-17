@@ -76,5 +76,26 @@ def fetch_job_details_endpoint():
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
+#
+@app.route('/get_feed_posts', methods=['GET'])
+def get_feed_posts_endpoint():
+    username = request.args.get('username', "abdeljalil.sayarh@gmail.com")
+    password = request.args.get('password', "54321Nisk@")
+    limit = int(request.args.get('limit', 10))  # Number of posts to fetch
+
+    linkedin, error_response = get_authenticated_linkedin(username,password)
+    if error_response:
+        return error_response
+
+    try:
+        # Fetch LinkedIn feed posts
+        posts = linkedin.get_feed_posts(limit=limit)
+        if not posts:
+            return jsonify({"error": "No posts found in the feed.", "posts": []}), 404
+
+        return jsonify({"posts": posts})
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
 if __name__ == '__main__':
     app.run(debug=True)
