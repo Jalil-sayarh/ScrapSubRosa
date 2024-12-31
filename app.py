@@ -21,14 +21,16 @@ def get_authenticated_linkedin(username, password):
 # Endpoint to get job IDs based on search parameters
 @app.route('/get_job_ids', methods=['GET'])
 def get_job_ids():
-    username = request.args.get('username', "abdeljalil.sayarh@gmail.com")
-    password = request.args.get('password', "54321Nisk@")
+    username = request.args.get('username', "frstscout@gmail.com")
+    password = request.args.get('password', "54321Nisk@rmax")
     keywords = request.args.get('keywords')
     location = request.args.get('location')
-    experience = request.args.getlist('experience')
-    job_type = request.args.getlist('job_type')
+    experience = request.args.getlist('experience',["3","4","5","6"])
+    job_type = request.args.getlist('job_type',["F","C","T","O"])
     industries = request.args.getlist('industries')
     limit = int(request.args.get('limit', 10))
+    listed_at = int(request.args.get('limit', 86400))
+    remote = request.args.getlist('remote', ["1","2","3"])
 
     linkedin, error_response = get_authenticated_linkedin(username,password)
     if error_response:
@@ -41,7 +43,9 @@ def get_job_ids():
             experience=experience,
             job_type=job_type,
             industries=industries,
-            limit=limit
+            limit=limit,
+            listed_at=listed_at,
+            remote=remote
         )
         if not jobs:
             return jsonify({"error": "No jobs found for the given parameters.", "job_ids": []}), 404
@@ -54,8 +58,8 @@ def get_job_ids():
 # Endpoint to fetch job details given a list of job IDs
 @app.route('/fetch_job_details', methods=['GET'])
 def fetch_job_details_endpoint():
-    username = request.args.get('username', "abdeljalil.sayarh@gmail.com")
-    password = request.args.get('password', "54321Nisk@")
+    username = request.args.get('username', "frstscout@gmail.com")
+    password = request.args.get('password', "54321Nisk@rmax")
     job_id = request.args.get('job_id')
 
     if not job_id:
